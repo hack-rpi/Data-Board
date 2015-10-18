@@ -1,0 +1,13 @@
+doctype html
+html
+	head
+		title!= title
+		link(rel='stylesheet', href='/style/index.css')
+	body
+		div(class=['container'])
+			h1!= header
+			div(class=['chart'])
+		
+	script(src='/script/index.js')
+	script(src='/libs/jquery')
+	script(src='/libs/d3')
