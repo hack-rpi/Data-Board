@@ -1,5 +1,6 @@
 var express = require('express'),
 	lessMiddleware = require('less-middleware'),
+	config = require('./config'),
 	app = express();
 
 app.use(lessMiddleware(
@@ -14,7 +15,7 @@ app.set('view engine', 'jade');
 var controllers = require('./controllers/');
 app.use('/', controllers);
 
-var server = app.listen(80, function() {
+var server = app.listen(config.port, function() {
 	var host = server.address().address,
 		port = server.address().port;
 	console.log('App running at http://%s%s', host, port);

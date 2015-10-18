@@ -1,7 +1,10 @@
 var express = require('express'),
+	libs = require('./libs.js'),
+	data = require('./data.js'),
 	router = express.Router();
 
-router.use('/libs', require('./libs.js'));
+router.use('/libs', libs);
+router.use('/data', data);
 
 router.get('/', function(req, res) {
 	res.render('index.jade', {

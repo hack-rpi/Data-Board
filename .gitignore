@@ -1,2 +1,3 @@
 node_modules
 source/public/style/*.css
+source/config.json
