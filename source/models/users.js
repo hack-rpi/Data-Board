@@ -2,6 +2,55 @@ var MongoClient = require('mongodb').MongoClient,
 	_ = require('underscore'),
 	config = require('../config');
 
+/** 
+ * Get the total number of users on the Status Board
+ * @param callback
+ */	
+exports.getCount = function(callback) {
+	MongoClient.connect(config.mongo_url, function(err, db) {
+		db.collection('users').find()
+			.count(function(err, count) {
+				callback(err, count + '');
+				db.close();
+			});
+	});
+}
+
+/**
+ * Get the number of people that have been accepted
+ * @param callback
+ */
+exports.getNumAccepted = function(callback) {
+	MongoClient.connect(config.mongo_url, function(err, db) {
+		db.collection('users')
+			.find({ 'settings.accepted': true })
+			.count(function(err, count) {
+				callback(err, count + '');
+				db.close();
+			});
+	});
+}
+
+/**
+ * Get the number of people confirmed
+ * @param callback
+ */
+exports.getNumConfirmed = function(callback) {
+	MongoClient.connect(config.mongo_url, function(err, db) {
+		db.collection('users')
+			.find({ 'settings.confirmed': true })
+			.count(function(err, count) {
+				callback(err, count + '');
+				db.close();
+			});
+	});
+}
+
+/**
+ * Get the list of schools and the number of people attending from each 
+ * school
+ * @param callback
+ */
 exports.getSchools = function(callback) {
 	MongoClient.connect(config.mongo_url, function(err, db) {
 		if (err) {
@@ -37,7 +86,8 @@ exports.getSchools = function(callback) {
 					_id: d,
 					count: refined_data[d]
 				}
-			})
+			});
+			db.close();
 			callback(null, data);
 		});
 	});

@@ -2,6 +2,9 @@ var MongoClient = require('mongodb').MongoClient,
 	_ = require('underscore'),
 	config = require('../config');
 
+/**
+ * Get the genders and number of people of each gender option
+ */
 exports.getGenders = function(callback) {
 	MongoClient.connect(config.mongo_url, function(err, db) {
 		if (err) {
