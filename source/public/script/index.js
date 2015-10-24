@@ -18,8 +18,7 @@ function onChartButton(event) {
 			$('.school-chart').empty();
 			$.get('/data/users/schools')
 				.done(function(res) {
-					var filtered = [];
-					res.forEach(function(d) { if (d.count > 2) filtered.push(d); });
+					var filtered = filter(res, function(d) { return d.count > 2; });
 					plotBarChart(d3.select('.school-chart'), filtered);
 				});
 			break;
@@ -27,7 +26,8 @@ function onChartButton(event) {
 			$('.gender-chart').empty();
 			$.get('/data/anonData/genders')
 				.done(function(res) {
-					plotPieChart(d3.select('.gender-chart'), res);
+					var filtered = filter(res, function(d) { return d._id !== null; });
+					plotPieChart(d3.select('.gender-chart'), filtered);
 				});
 			break;
 		default: break;
@@ -43,20 +43,27 @@ function onChartButton(event) {
  * @returns {void}
  */
 function plotPieChart($chart, data) {
-	var width = 960,
-		height = 500,
-		radius = Math.min(width, height) / 2;
-	var color = d3.scale.category10();
+	var margin = { top: 20, right: 10, bottom: 10, left: 10 },
+		width = 960 - margin.right - margin.left,
+		height = 500 - margin.top - margin.bottom,
+		radius = Math.min(width, height) / 2,
+		total = d3.sum(data, function(d) { return d.count; });
+	var color = d3.scale.category10()
 	var arc = d3.svg.arc()
-		.outerRadius(radius - 10)
-		.innerRadius(0);
+			.outerRadius(radius - 10)
+			.innerRadius(0),
+		outerArc = d3.svg.arc()
+			.outerRadius(radius)
+			.innerRadius(radius);
 	var pie = d3.layout.pie()
 		.value(function(d) { return d.count; });
 	var svg = $chart.append('svg')
-		.attr('width', width)
-		.attr('height', height)
+		.attr('class', 'pie')
+		.attr('width', width + margin.left + margin.right)
+		.attr('height', height + margin.top + margin.bottom)
 		.append('g')
-			.attr('transform', 'translate(' + width/2 + ',' + height/2 + ')');
+			.attr('transform', 'translate(' + (width/2 + margin.left) + 
+				',' + (height/2 + margin.top) + ')');
 	var g = svg.selectAll('.arc')
 		.data(pie(data))
 		.enter().append('g')
@@ -64,7 +71,41 @@ function plotPieChart($chart, data) {
 	g.append('path')
 		.attr('d', arc)
 		.style('fill', function(d, i) { return color(i); });
+		
+	function midAngle(d) {
+		return d.startAngle + (d.endAngle + d.startAngle)  / 2;
+	}
 	
+	svg.append('g')
+		.attr('class', 'labels');
+	svg.select('.labels').selectAll('text')
+			.data(pie(data))
+		.enter().append('text')
+			.attr('dy', '.35em')
+			.text(function(d) {
+				var percent = Math.round(d.data.count / total * 100);
+				percent = percent || '< 1';
+				return d.data._id + ' (' + percent + '%)';
+			})
+			.attr('transform', function(d) {
+				var pos = outerArc.centroid(d);
+				pos[0] = radius * (midAngle(d) < Math.PI ? 1 : -1);
+				return 'translate(' + pos + ')';
+			})
+			.attr('text-anchor', function(d) {
+				return midAngle(d) < Math.PI ? 'start' : 'end';
+			});
+			
+	svg.append('g')
+		.attr('class', 'lines');
+	svg.select('.lines').selectAll('polyline')
+			.data(pie(data))
+		.enter().append('polyline')
+			.attr('points', function(d) {
+				var pos = outerArc.centroid(d);
+				pos[0] = radius * 0.95 * (midAngle(d) < Math.PI ? 1 : -1);
+				return [arc.centroid(d), outerArc.centroid(d), pos]
+			});
 }
 
 
@@ -180,4 +221,22 @@ function getEventStats() {
 		.done(function(res) {
 			$('.event-stats .num-confirmed').text(res);
 		});
+}
+
+
+/**
+ * Helper function to filter an array of values
+ * @param {array} array of values to filter
+ * @param {function} function that returns a boolean when evaluated 
+ * at each value in the list
+ * @returns {array} the filtered array
+ */
+function filter(list, predicate) {
+	var result = [];
+	list.forEach(function(d) { 
+		if (predicate(d)) {
+			result.push(d);
+		}
+	});
+	return result;
 }
