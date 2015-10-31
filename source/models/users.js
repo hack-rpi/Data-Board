@@ -92,3 +92,38 @@ exports.getSchools = function(callback) {
 		});
 	});
 }
+
+/**
+ * Get the list of zip codes where people are coming from and the
+ * number of people coming from each
+ * @param callback
+ */
+exports.getZipCodes = function(callback) {
+	MongoClient.connect(config.mongo_url, function(err, db) {
+		if (err) {
+			console.error(err);
+			callback(err, null);
+			return;
+		}
+		var users = db.collection('users'),
+			pipeline = [
+				{ $group: { _id: '$profile.travel.zipcode', count: { $sum: 1 } } }
+			];
+		users.aggregate(pipeline, function(err, result) {
+			if (err) {
+				console.error(err);
+				callback(err, null);
+				return;
+			}
+			var zipCodeData = require('./zipcode_data.json');
+			_.each(result, function(z) {
+				if (zipCodeData[z._id] === undefined) {
+					console.log(z._id);
+				}
+				z.geo = zipCodeData[z._id];
+			});
+			db.close();
+			callback(null, result);
+		});
+	});
+}

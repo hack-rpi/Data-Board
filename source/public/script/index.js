@@ -22,6 +22,9 @@ function onChartButton(event) {
 					plotBarChart(d3.select('.school-chart'), filtered);
 				});
 			break;
+		case 'zipcodes':
+			
+			break;
 		case 'genders':
 			$('.gender-chart').empty();
 			$.get('/data/anonData/genders')
