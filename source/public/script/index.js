@@ -224,6 +224,25 @@ function getEventStats() {
 		.done(function(res) {
 			$('.event-stats .num-confirmed').text(res);
 		});
+	$.get('/data/stats/bus_routes')
+		.done(function(res) {
+			for (var r in res) {
+				var bus_table = '<h3>' + r + '</h3><div class="bus">';
+				for (var s in res[r]) {
+					var stop = res[r][s];
+					bus_table += '<div><b>' + s + '</b><br>';
+					bus_table +=
+						'<table>' +
+							'<tr> <td>Accepted</td><td>' + stop.accepted + '</td> </tr>' +
+							'<tr> <td>Confirmed</td><td>' + stop.confirmed + '</td> </tr>' +
+							'<tr> <td>Rejected</td><td>' + stop.rejected + '</td> </tr>' +
+							'<tr> <td>Total</td><td>' + stop.total + '</td></tr>' +
+						'</table></div>'
+				}
+				bus_table += '</div>'
+				$('.buses').append(bus_table);
+			}
+		});
 }
 
 

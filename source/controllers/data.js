@@ -52,6 +52,12 @@ router.get('/stats/num_confirmed', function(req, res) {
 	users.getNumConfirmed(function(err, data) {
 		res.send(data);
 	});
+});
+
+router.get('/stats/bus_routes', function(req, res) {
+	users.getBusRoutes(function(err, data) {
+		res.send(data);
+	});
 })
 
 module.exports = router; 

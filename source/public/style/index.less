@@ -14,27 +14,32 @@ h2 {
 	border-bottom: 2px solid #999;
 }
 
-table td:first-child {
-	font-weight: bold;
-}
-
 table {
 	border-spacing: 15px 0;
+	
+	td:first-child {
+		font-weight: bold;
+	}
 }
 
 .btn {
 	display: inline;
 	padding: 2px;
 	margin: 3px;
-}
-.btn:hover {
-	cursor: pointer;
-}
-.btn:active {
-	font-weight: bold;
+	
+	&:hover {
+		cursor: pointer;
+	}
+	&:active {
+		font-weight: bold;
+	}
 }
 
 .download {
 	text-decoration: none;
 	color: #000;
+}
+
+.buses .bus  {
+	display: flex;
 }

@@ -8,8 +8,18 @@ var MongoClient = require('mongodb').MongoClient,
  */	
 exports.getCount = function(callback) {
 	MongoClient.connect(config.mongo_url, function(err, db) {
+		if (err) {
+			console.error(err);
+			callback(err, null);
+			return;
+		}
 		db.collection('users').find()
 			.count(function(err, count) {
+				if (err) {
+					console.error(err);
+					callback(err, null);
+					return;
+				}
 				callback(err, count + '');
 				db.close();
 			});
@@ -22,9 +32,19 @@ exports.getCount = function(callback) {
  */
 exports.getNumAccepted = function(callback) {
 	MongoClient.connect(config.mongo_url, function(err, db) {
+		if (err) {
+			console.error(err);
+			callback(err, null);
+			return;
+		}
 		db.collection('users')
-			.find({ 'settings.accepted': true })
+			.find({ 'settings.accepted.flag': true })
 			.count(function(err, count) {
+				if (err) {
+					console.error(err);
+					callback(err, null);
+					return;
+				}
 				callback(err, count + '');
 				db.close();
 			});
@@ -37,12 +57,87 @@ exports.getNumAccepted = function(callback) {
  */
 exports.getNumConfirmed = function(callback) {
 	MongoClient.connect(config.mongo_url, function(err, db) {
+		if (err) {
+			console.error(err);
+			callback(err, null);
+			return;
+		}
 		db.collection('users')
-			.find({ 'settings.confirmed': true })
+			.find({ 'settings.confirmed.flag': true })
 			.count(function(err, count) {
+				if (err) {
+					console.error(err);
+					callback(err, null);
+					return;
+				}
 				callback(err, count + '');
 				db.close();
 			});
+	});
+}
+
+/**
+ * Get number of people on each bus route and at each stop
+ * @param callback
+ */
+exports.getBusRoutes = function(callback) {
+	MongoClient.connect(config.mongo_url, function(err, db) {
+		if (err) {
+			console.error(err);
+			callback(err, null);
+			return;
+		}
+		var users = db.collection('users'),
+			buses = {},
+			pipeline = [
+				{ $group: { _id: {
+						stop: '$settings.accepted.travel.method',
+						confirmed: '$settings.confirmed.flag'
+					},
+					total:  { $sum: 1 } } 
+				}
+			]
+		users.aggregate(pipeline, function(err, result) {
+			if (err) {
+				console.error(err);
+				callback(err, null);
+				return;
+			}
+			for (var r in config.bus_routes) {
+				var route = config.bus_routes[r];
+				buses['Route #' + r] = {};
+				buses['Route #' + r].Total = {
+					accepted: 0,
+					confirmed: 0,
+					rejected: 0,
+					total: 0
+				}
+				for (var s in route) {
+					var stop = route[s],
+						stop_accepted = _.find(result, function(d) { 
+							return d._id.stop === stop && d._id.confirmed === null; 
+						}) || { total: 0 },
+						stop_rejected = _.find(result, function(d) { 
+							return d._id.stop === stop && d._id.confirmed === false; 
+						}) || { total: 0 },
+						stop_confirmed = _.find(result, function(d) { 
+							return d._id.stop === stop && d._id.confirmed === true; 
+						}) || { total: 0 };
+					buses['Route #' + r][stop] = {
+						accepted: stop_accepted.total,
+						confirmed: stop_confirmed.total,
+						rejected: stop_rejected.total,
+						total: stop_accepted.total + stop_confirmed.total
+					};
+					buses['Route #' + r].Total.accepted += stop_accepted.total;
+					buses['Route #' + r].Total.confirmed += stop_confirmed.total;
+					buses['Route #' + r].Total.rejected += stop_rejected.total;
+					buses['Route #' + r].Total.total += (stop_accepted.total + stop_confirmed.total);
+				}
+			}
+			
+			callback(null, buses);
+		});
 	});
 }
 
