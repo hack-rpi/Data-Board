@@ -31,6 +31,12 @@ router.get('/anonData/genders', function(req, res) {
 	});
 });
 
+router.get('/anonData/races', function(req, res) {
+	anonData.getRaces(function(err, data) {
+		res.send(data);
+	});
+});
+
 
 /**
  * General Statistics Routes

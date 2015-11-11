@@ -33,6 +33,14 @@ function onChartButton(event) {
 					plotPieChart(d3.select('.gender-chart'), filtered);
 				});
 			break;
+		case 'races':
+			$('.race-chart').empty();
+			$.get('/data/anonData/races')
+				.done(function(res) {
+					var filtered = filter(res, function(d) { return d._id !== null; });
+					plotPieChart(d3.select('.race-chart'), filtered);
+				});
+			break;
 		default: break;
 	}
 }
