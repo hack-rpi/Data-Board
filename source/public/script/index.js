@@ -4,6 +4,7 @@
 $(document).ready(function() {
 	getEventStats();
 	$('.btn.chart').on('click', onChartButton);
+  $('.btn.download').on('click', onDownloadButton);
 });
 
 
@@ -12,7 +13,8 @@ $(document).ready(function() {
  * @param {Event} JQuery event 
  */
 function onChartButton(event) {
-	var action = $(event.target).attr('data-action');
+	var $btn = $(event.target),
+      action = $btn.attr('data-action');
 	switch (action) {
 		case 'schools':
 			$('.school-chart').empty();
@@ -23,8 +25,15 @@ function onChartButton(event) {
 				});
 			break;
 		case 'zipcodes':
-			
 			break;
+    case 'why':
+      $('.why-chart').empty();
+			$.get('/data/users/why')
+				.done(function(res) {
+					var filtered = filter(res, function(d) { return d._id !== null; });
+					plotPieChart(d3.select('.why-chart'), filtered);
+				});
+      break;
 		case 'genders':
 			$('.gender-chart').empty();
 			$.get('/data/anonData/genders')
@@ -43,6 +52,62 @@ function onChartButton(event) {
 			break;
 		default: break;
 	}
+}
+
+
+/**
+ * 
+ */
+function onDownloadButton(event) {
+  var $btn = $(event.target),
+      target = $btn.attr('data-target');
+  if (target) {
+    var $chart = $('.' + target + ' svg'),
+        svg_elems = traverse( $chart[0] );
+    for (var i in svg_elems) {
+      explicitlySetStyle( svg_elems[i] );
+    }
+    var a = document.createElement('a'),
+        source = 'data:image/svg+xml;base64,' + 
+          btoa(
+            $chart.attr('version', 1.1)
+              .attr('xmlns', 'http://www.w3.org/2000/svg')
+              .parent().html()
+            );
+    a.download = target + '.svg';
+    a.href = source;
+    a.click();
+  }
+}
+
+function explicitlySetStyle (element) {
+  var cSSStyleDeclarationComputed = getComputedStyle(element);
+  var i, len, key, value;
+  var computedStyleStr = "";
+  var svg = document.createElement('svg');
+  var emptySvgDeclarationComputed = getComputedStyle(svg);
+  for (i=0, len=cSSStyleDeclarationComputed.length; i<len; i++) {
+      key=cSSStyleDeclarationComputed[i];
+      value=cSSStyleDeclarationComputed.getPropertyValue(key);
+      if (value!==emptySvgDeclarationComputed.getPropertyValue(key)) {
+          computedStyleStr+=key+":"+value+";";
+      }
+  }
+  element.setAttribute('style', computedStyleStr);
+}
+function traverse(obj){
+  var tree = [];
+  tree.push(obj);
+  if (obj.hasChildNodes()) {
+      var child = obj.firstChild;
+      while (child) {
+          if (child.nodeType === 1 && child.nodeName != 'SCRIPT'){
+              tree.push(child);
+          }
+          child = child.nextSibling;
+      }
+  }
+  return tree;
 }
 
 

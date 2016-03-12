@@ -134,9 +134,9 @@ exports.getBusRoutes = function(callback) {
 					buses['Route #' + r].Total.rejected += stop_rejected.total;
 					buses['Route #' + r].Total.total += (stop_accepted.total + stop_confirmed.total);
 				}
-			}
-			
+			}			
 			callback(null, buses);
+      db.close();
 		});
 	});
 }
@@ -182,8 +182,8 @@ exports.getSchools = function(callback) {
 					count: refined_data[d]
 				}
 			});
-			db.close();
 			callback(null, data);
+			db.close();
 		});
 	});
 }
@@ -217,8 +217,35 @@ exports.getZipCodes = function(callback) {
 				}
 				z.geo = zipCodeData[z._id];
 			});
-			db.close();
 			callback(null, result);
+			db.close();
+		});
+	});
+}
+
+/**
+ * Get the counts for the reasons why poeple are interested in coming
+ * @param callback
+ */
+exports.getWhy = function(callback) {
+	MongoClient.connect(config.mongo_url, function(err, db) {
+		if (err) {
+			console.error(err);
+			callback(err, null);
+			return;
+		}
+		var users = db.collection('users'),
+			pipeline = [
+				{ $group: { _id: '$profile.interests.why', count: { $sum: 1 } } }
+			];
+		users.aggregate(pipeline, function(err, result) {
+			if (err) {
+				console.error(err);
+				callback(err, null);
+				return;
+			}			
+			callback(null, result);
+			db.close();
 		});
 	});
 }

@@ -22,8 +22,9 @@ exports.getGenders = function(callback) {
 				callback(err, null);
 				return;
 			}
+      db.close();
 			callback(null, result);
-		})
+		});
 	});
 }
 
@@ -47,7 +48,8 @@ exports.getRaces = function(callback) {
 				callback(err, null);
 				return;
 			}
+      db.close();
 			callback(null, result);
-		})
+		});
 	});
 }

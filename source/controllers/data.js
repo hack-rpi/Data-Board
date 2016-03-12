@@ -20,6 +20,12 @@ router.get('/users/zipcodes', function(req, res) {
 	});
 });
 
+router.get('/users/why', function(req, res) {
+	users.getWhy(function(err, data) {
+		res.send(data);
+	});
+});
+
 
 /**
  * Anon Data Routes
