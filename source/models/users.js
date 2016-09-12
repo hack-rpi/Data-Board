@@ -155,7 +155,7 @@ exports.getSchools = function(callback) {
 		}
 		var users = db.collection('users'),
 			pipeline = [
-				{ $group: { _id: '$profile.school.name', count: { $sum: 1 } } }
+				{ $group: { _id: '$profile.school', count: { $sum: 1 } } }
 			];
 		users.aggregate(pipeline, function(err, result) {
 			if (err) {

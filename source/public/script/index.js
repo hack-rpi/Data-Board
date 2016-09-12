@@ -20,7 +20,10 @@ function onChartButton(event) {
 			$('.school-chart').empty();
 			$.get('/data/users/schools')
 				.done(function(res) {
-					var filtered = filter(res, function(d) { return d.count > 2; });
+					var filtered = filter(res, function(d) { return d.count > 0; });
+					filtered = filtered.sort(function(a, b) {
+						return a._id > b._id;
+					});
 					plotBarChart(d3.select('.school-chart'), filtered);
 				});
 			break;
