@@ -92,6 +92,7 @@ exports.getBusRoutes = function(callback) {
 			pipeline = [
 				{ $group: { _id: {
 						stop: '$settings.accepted.travel.method',
+						confirmedOnBus: '$settings.confirmed.travel.accepted',
 						confirmed: '$settings.confirmed.flag'
 					},
 					total:  { $sum: 1 } } 
@@ -118,10 +119,10 @@ exports.getBusRoutes = function(callback) {
 							return d._id.stop === stop && d._id.confirmed === null; 
 						}) || { total: 0 },
 						stop_rejected = _.find(result, function(d) { 
-							return d._id.stop === stop && d._id.confirmed === false; 
+							return d._id.stop === stop && (!d._id.confirmed || !d._id.confirmedOnBus); 
 						}) || { total: 0 },
 						stop_confirmed = _.find(result, function(d) { 
-							return d._id.stop === stop && d._id.confirmed === true; 
+							return d._id.stop === stop && d._id.confirmed && d._id.confirmedOnBus; 
 						}) || { total: 0 };
 					buses['Route #' + r][stop] = {
 						accepted: stop_accepted.total,
