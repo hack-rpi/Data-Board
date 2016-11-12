@@ -77,6 +77,31 @@ exports.getNumConfirmed = function(callback) {
 }
 
 /**
+ * Get the number of people checked-in
+ * @param callback
+ */
+exports.getNumCheckedIn = function(callback) {
+	MongoClient.connect(config.mongo_url, function(err, db) {
+		if (err) {
+			console.error(err);
+			callback(err, null);
+			return;
+		}
+		db.collection('users')
+			.find({ 'settings.checked_in': true })
+			.count(function(err, count) {
+				if (err) {
+					console.error(err);
+					callback(err, null);
+					return;
+				}
+				callback(err, count + '');
+				db.close();
+			});
+	});
+}
+
+/**
  * Get number of people on each bus route and at each stop
  * @param callback
  */

@@ -300,6 +300,10 @@ function getEventStats() {
 		.done(function(res) {
 			$('.event-stats .num-confirmed').text(res);
 		});
+	$.get('/data/stats/num_checked_in')
+		.done(function(res) {
+			$('.event-stats .num-checked-in').text(res);
+		});
 	$.get('/data/stats/bus_routes')
 		.done(function(res) {
 			for (var r in res) {

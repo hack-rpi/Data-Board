@@ -66,6 +66,12 @@ router.get('/stats/num_confirmed', function(req, res) {
 	});
 });
 
+router.get('/stats/num_checked_in', function(req, res) {
+	users.getNumCheckedIn(function(err, data) {
+		res.send(data);
+	});
+});
+
 router.get('/stats/bus_routes', function(req, res) {
 	users.getBusRoutes(function(err, data) {
 		res.send(data);

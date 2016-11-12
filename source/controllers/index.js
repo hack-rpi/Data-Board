@@ -9,7 +9,7 @@ router.use('/data', data);
 router.get('/', function(req, res) {
 	res.render('index.jade', {
 		title: 'Data Board',
-		header: 'Data Board - HackRPI 2015'
+		header: 'Data Board - HackRPI 2016'
 	});
 });
 
