@@ -1,0 +1,21 @@
+{
+  "name": "data-board",
+  "description": "data visualizations for hackathon data",
+  "main": "main.go",
+  "authors": [
+    "Matt Poegel"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/hack-rpi/Data-Board",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "d3": "^4.4.0",
+    "jquery": "^3.1.1"
+  }
+}

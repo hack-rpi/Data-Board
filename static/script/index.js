@@ -288,19 +288,19 @@ function plotBarChart($chart, data) {
  * Updates the page with the latest event stats.
  */
 function getEventStats() {
-	$.get('/data/stats/num_registered')
+	$.get('/data/users/count')
 		.done(function(res) {
 			$('.event-stats .num-registered').text(res);
 		});
-	$.get('/data/stats/num_accepted')
+	$.get('/data/users/accepted')
 		.done(function(res) {
 			$('.event-stats .num-accepted').text(res);
 		});
-	$.get('/data/stats/num_confirmed')
+	$.get('/data/users/confirmed')
 		.done(function(res) {
 			$('.event-stats .num-confirmed').text(res);
 		});
-	$.get('/data/stats/num_checked_in')
+	$.get('/data/users/checkedin')
 		.done(function(res) {
 			$('.event-stats .num-checked-in').text(res);
 		});

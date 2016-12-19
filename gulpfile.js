@@ -2,6 +2,7 @@ const child = require('child_process');
 const gulp = require('gulp');
 const less = require('gulp-less');
 const path = require('path');
+const sequence = require('run-sequence');
 const util = require('gulp-util');
 
 var server;
@@ -9,15 +10,31 @@ var server;
 gulp.task('default', ['go', 'watch']);
 gulp.task('watch', ['watch:less', 'watch:go']);
 
-gulp.task('watch:go', function() {
-  gulp.watch(['./**/*.go'], ['go']);
-});
+gulp.task('go', function(callback) { sequence('go:build', 'go:start', callback); });
 
-gulp.task('go', function() {
+gulp.task('go:build', function() {
   if (server) {
     server.kill();
   }
-  server = child.spawn('go', ['run', 'main.go']);
+  var build = child.spawnSync('go', ['install']);
+  if (build.stderr.length) {
+    var lines = build.stderr.toString()
+      .split('\n').filter(function(line) {
+        return line.length
+      });
+    for (var l in lines)
+      util.log(util.colors.red(
+        'Error (go install): ' + lines[l]
+      ));
+  }
+  return build;
+});
+
+gulp.task('go:start', function() {
+  if (server) {
+    server.kill();
+  }
+  server = child.spawn(process.env.GOPATH + '/bin/Data-Board.exe');
   /* Pretty print server log output */
   server.stdout.on('data', function(data) {
     var lines = data.toString().split('\n')
@@ -29,6 +46,10 @@ gulp.task('go', function() {
   server.stderr.on('data', function(data) {
     process.stdout.write(data.toString());
   });
+});
+
+gulp.task('watch:go', function() {
+  gulp.watch(['./**/*.go'], ['go:build', 'go:start']);
 });
 
 gulp.task('watch:less', function() {
