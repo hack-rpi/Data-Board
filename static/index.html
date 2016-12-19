@@ -1,0 +1,70 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Data Board</title>
+    <link rel="stylesheet" href="/style/index.css">
+    <link rel="stylesheet" href="/style/chart.css">
+  </head>
+  <body>
+    <div class="container">
+      <h1>Data Board - HackRPI 2016</h1>
+      <h2>Event Stats</h2>
+      <div class="event-stats">
+        <table>
+          <tr>
+            <td>Registered</td>
+            <td class="num-registered">-</td>
+          </tr>
+          <tr>
+            <td>Accepted</td>
+            <td class="num-accepted">-</td>
+          </tr>
+          <tr>
+            <td>Confirmed</td>
+            <td class="num-confirmed">-</td>
+          </tr>
+          <tr><td>Checked-In</td><td class="num-checked-in">-</td></tr>
+        </table>
+      </div>
+      <div class="buses"></div>
+      <!-- ==========-->
+      
+      <h2>General Data</h2>
+      
+      <h3>Schools</h3>
+      <div data-action="schools" class="btn chart">Chart Schools</div>
+      <a href="/data/users/schools" download="schools.json" class="btn download">Download Schools</a>
+      <div class="school-chart"></div>
+      
+      <h3>Zip Codes</h3>
+      <div data-action="zipcodes" class="btn chart">Plot Zip Codes</div>
+      <a href="/data/users/zipcodes" download="zipcodes.json" class="btn download">Download Zip Codes</a>
+      <div class="zipcode-chart map"></div>
+      
+      <h3>Why</h3>
+      <div data-action="why" class="btn chart">Plot</div>
+      <a href="/data/users/why" download="why.json" class="btn download">Download Data</a>
+      <a data-action="download" data-target="why-chart" class="btn download">Download Chart</a>
+      <div class="why-chart"></div>
+      <!-- ==========-->
+      
+      <h2>Anonymous Data</h2>
+      
+      <h3>Genders</h3>
+      <div data-action="genders" class="btn chart">Chart Genders</div>
+      <a href="/data/anonData/genders" download="genders.json" class="btn download">Download Genders</a>
+      <div class="gender-chart"></div>
+      
+      <h3>Races</h3>
+      <div data-action="races" class="btn chart">Chart Races</div>
+      <a href="/data/anonData/races" download="races.json" class="btn download">Download Races</a>
+      <div class="race-chart"></div>
+    </div>
+  </body>
+  
+  <script src="/libs/jquery"></script>
+  <script src="/libs/d3"></script>
+  <script src="/script/index.js"></script>
+
+</html>
