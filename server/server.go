@@ -3,19 +3,31 @@ package server
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
+// The Server struct encapsulates the server information, handler methods, and a pointer to the
+// active database connection
 type Server struct {
 	port      string
 	staticDir string
+	db        *DataBase
+	config    *Config
 }
 
+// NewServer creates a Server struct from a given port and static directory
 func NewServer(port, staticDir string) *Server {
-	s := Server{port, staticDir}
+	db := NewDataBase("localhost:27017", "status-board")
+	c, err := LoadConfig()
+	if err != nil {
+		log.Println(err)
+	}
+	s := Server{port, staticDir, db, c}
 	return &s
 }
 
+// Start starts the HTTP server and waits for connections
 func (s *Server) Start() {
 	http.Handle("/", http.FileServer(http.Dir(s.staticDir)))
 	http.HandleFunc("/libs/", s.libHandler)
@@ -49,12 +61,14 @@ func (s *Server) dataHandler(w http.ResponseWriter, r *http.Request) {
 	resource := r.URL.Path[len(path):]
 	switch resource {
 	case "users/count":
-		fmt.Fprintf(w, "%d", CountUsers())
+		fmt.Fprintf(w, "%d", s.db.CountUsers())
 	case "users/accepted":
-		fmt.Fprintf(w, "%d", 0)
+		fmt.Fprintf(w, "%d", s.db.CountAccepted())
 	case "users/confirmed":
-		fmt.Fprintf(w, "%d", 0)
+		fmt.Fprintf(w, "%d", s.db.CountConfirmed())
 	case "users/checkedin":
-		fmt.Fprintf(w, "%d", 0)
+		fmt.Fprintf(w, "%d", s.db.CountCheckedIn())
+	case "users/busRosters":
+		fmt.Fprint(w, s.db.GetBusRouteStatus(s.config.BusRoutes))
 	}
 }

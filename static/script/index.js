@@ -304,7 +304,7 @@ function getEventStats() {
 		.done(function(res) {
 			$('.event-stats .num-checked-in').text(res);
 		});
-	$.get('/data/stats/bus_routes')
+	$.get('/data/users/busRosters')
 		.done(function(res) {
 			for (var r in res) {
 				var bus_table = '<h3>' + r + '</h3><div class="bus">';
