@@ -1,4 +1,4 @@
 bower_components
 node_modules
 source/public/style/*.css
-source/config.json
+config.json

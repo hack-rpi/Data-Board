@@ -9,16 +9,19 @@ import (
 	"strings"
 )
 
+// The Config struct represents the server configuration
 type Config struct {
 	RootURL   string
 	Port      string
 	MongoURL  string
+	DBName    string
 	BusRoutes [][]string
 }
 
+// LoadConfig loads the configuration file specified in the DB_CONFIG_FILE environment variable
 func LoadConfig() (*Config, error) {
 	fn := os.Getenv("DB_CONFIG_FILE")
-	deflt := Config{"", "", "", make([][]string, 0)}
+	deflt := Config{"", "", "", "", make([][]string, 0)}
 	if fn == "" {
 		return &deflt, errors.New("DB_CONFIG_FILE not defined")
 	}

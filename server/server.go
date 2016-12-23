@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -18,11 +19,11 @@ type Server struct {
 
 // NewServer creates a Server struct from a given port and static directory
 func NewServer(port, staticDir string) *Server {
-	db := NewDataBase("localhost:27017", "status-board")
 	c, err := LoadConfig()
 	if err != nil {
 		log.Println(err)
 	}
+	db := NewDataBase(c.MongoURL, c.DBName)
 	s := Server{port, staticDir, db, c}
 	return &s
 }
@@ -68,7 +69,12 @@ func (s *Server) dataHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "%d", s.db.CountConfirmed())
 	case "users/checkedin":
 		fmt.Fprintf(w, "%d", s.db.CountCheckedIn())
-	case "users/busRosters":
-		fmt.Fprint(w, s.db.GetBusRouteStatus(s.config.BusRoutes))
+	case "users/busStatus":
+		resp, err := json.Marshal(s.db.GetBusRouteStatus(s.config.BusRoutes))
+		if err != nil {
+			log.Fatal(err)
+		} else {
+			fmt.Fprint(w, string(resp))
+		}
 	}
 }

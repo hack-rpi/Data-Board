@@ -304,20 +304,30 @@ function getEventStats() {
 		.done(function(res) {
 			$('.event-stats .num-checked-in').text(res);
 		});
-	$.get('/data/users/busRosters')
+	$.get('/data/users/busStatus')
 		.done(function(res) {
+			res = JSON.parse(res);
 			for (var r in res) {
-				var bus_table = '<h3>' + r + '</h3><div class="bus">';
-				for (var s in res[r]) {
-					var stop = res[r][s];
-					bus_table += '<div><b>' + s + '</b><br>';
+				var route = res[r];
+				var bus_table = '<h3>' + route.RouteID + '</h3><div class="bus">';
+				bus_table += '<div><b> Total </b><br>';
+				bus_table +=
+					'<table>' +
+						'<tr> <td>Accepted</td><td>' + route.Accepted + '</td> </tr>' +
+						'<tr> <td>Confirmed</td><td>' + route.Confirmed + '</td> </tr>' +
+						'<tr> <td>Rejected</td><td>' + route.Rejected + '</td> </tr>' +
+						'<tr> <td>Total</td><td>' + route.Total + '</td></tr>' +
+					'</table></div>';
+				for (var s in route.Stops) {
+					var stop = route.Stops[s];
+					bus_table += '<div><b>' + stop.StopName + '</b><br>';
 					bus_table +=
 						'<table>' +
-							'<tr> <td>Accepted</td><td>' + stop.accepted + '</td> </tr>' +
-							'<tr> <td>Confirmed</td><td>' + stop.confirmed + '</td> </tr>' +
-							'<tr> <td>Rejected</td><td>' + stop.rejected + '</td> </tr>' +
-							'<tr> <td>Total</td><td>' + stop.total + '</td></tr>' +
-						'</table></div>'
+							'<tr> <td>Accepted</td><td>' + stop.Accepted + '</td> </tr>' +
+							'<tr> <td>Confirmed</td><td>' + stop.Confirmed + '</td> </tr>' +
+							'<tr> <td>Rejected</td><td>' + stop.Rejected + '</td> </tr>' +
+							'<tr> <td>Total</td><td>' + stop.Total + '</td></tr>' +
+						'</table></div>';
 				}
 				bus_table += '</div>'
 				$('.buses').append(bus_table);
