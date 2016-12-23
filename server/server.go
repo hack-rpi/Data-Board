@@ -45,7 +45,7 @@ func (s *Server) libHandler(w http.ResponseWriter, r *http.Request) {
 	lib := r.URL.Path[len(path):]
 	var fd []byte
 	if lib == "d3" {
-		fd, _ = ioutil.ReadFile("./bower_components/d3.min.js")
+		fd, _ = ioutil.ReadFile("./bower_components/d3/d3.min.js")
 	} else if lib == "jquery" {
 		fd, _ = ioutil.ReadFile("./bower_components/jquery/dist/jquery.min.js")
 	} else {
@@ -75,6 +75,12 @@ func (s *Server) dataHandler(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		} else {
 			fmt.Fprint(w, string(resp))
+		}
+	case "users/schools":
+		if resp, err := json.Marshal(s.db.GetSchools()); err != nil {
+			log.Fatal(err)
+		} else {
+			fmt.Fprintf(w, string(resp))
 		}
 	}
 }

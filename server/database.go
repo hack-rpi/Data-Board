@@ -144,3 +144,31 @@ func zeroIfNil(d *map[string]interface{}) int {
 	}
 	return 0
 }
+
+// GetSchools returns a map of unique schools to the number of people registered from each school
+func (db *DataBase) GetSchools() []map[string]interface{} {
+	pipeline := []bson.M{{
+		"$group": bson.M{
+			"_id": "$profile.school",
+			"count": bson.M{
+				"$sum": 1,
+			},
+		},
+	}}
+	pipe := db.db.C("users").Pipe(pipeline)
+	var res []map[string]interface{}
+	err := pipe.All(&res)
+	if err != nil {
+		log.Fatal(err)
+		return nil
+	}
+	// schools := make(map[string]int)
+	// for _, school := range res {
+	// 	if name, found := school["_id"].(string); found {
+	// 		count := school["count"].(int)
+	// 		schools[name] = count
+	// 	}
+	// }
+	// return schools
+	return res
+}

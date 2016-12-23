@@ -20,7 +20,8 @@ function onChartButton(event) {
 			$('.school-chart').empty();
 			$.get('/data/users/schools')
 				.done(function(res) {
-					var filtered = filter(res, function(d) { return d.count > 0; });
+					res = JSON.parse(res);
+					var filtered = filter(res, function(d) { return d._id && d.count > 0; });
 					filtered = filtered.sort(function(a, b) {
 						return a._id > b._id;
 					});

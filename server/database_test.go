@@ -33,3 +33,8 @@ func TestBusRouteStatus(t *testing.T) {
 	fmt.Println(res)
 	fmt.Println(string(r))
 }
+
+func TestGetSchools(t *testing.T) {
+	res := DB.GetSchools()
+	fmt.Println(res)
+}
