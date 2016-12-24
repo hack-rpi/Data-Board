@@ -162,13 +162,5 @@ func (db *DataBase) GetSchools() []map[string]interface{} {
 		log.Fatal(err)
 		return nil
 	}
-	// schools := make(map[string]int)
-	// for _, school := range res {
-	// 	if name, found := school["_id"].(string); found {
-	// 		count := school["count"].(int)
-	// 		schools[name] = count
-	// 	}
-	// }
-	// return schools
 	return res
 }
