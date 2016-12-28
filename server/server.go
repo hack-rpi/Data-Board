@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"github.com/cbroglie/mustache"
+	"github.com/gorilla/context"
+	"github.com/gorilla/sessions"
 )
 
 // The Server struct encapsulates the server information, handler methods, and a pointer to the
@@ -19,6 +21,7 @@ type Server struct {
 	staticDir string
 	db        *DataBase
 	config    *Config
+	store     *sessions.CookieStore
 }
 
 // NewServer creates a Server struct from a given port and static directory
@@ -28,13 +31,14 @@ func NewServer(port, staticDir string) *Server {
 		log.Println(err)
 	}
 	db := NewDataBase(c.MongoURL, c.DBName)
-	s := Server{port, staticDir, db, c}
+	store := sessions.NewCookieStore([]byte("secret"))
+	s := Server{port, staticDir, db, c, store}
 	return &s
 }
 
 // Start starts the HTTP server and waits for connections
 func (s *Server) Start() {
-	http.Handle("/static/", http.FileServer(http.Dir(s.staticDir)))
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(s.staticDir))))
 
 	mustacheHandler := http.HandlerFunc(s.mustache)
 	http.Handle("/", s.flashMiddleware(mustacheHandler))
@@ -43,7 +47,7 @@ func (s *Server) Start() {
 	http.HandleFunc("/login", s.loginHandler)
 	http.HandleFunc("/data/", s.dataHandler)
 	fmt.Printf("Starting server on port %s\n", s.port)
-	http.ListenAndServe(s.port, nil)
+	http.ListenAndServe(s.port, context.ClearHandler(http.DefaultServeMux))
 }
 
 func (s *Server) mustache(w http.ResponseWriter, r *http.Request) {
@@ -52,12 +56,24 @@ func (s *Server) mustache(w http.ResponseWriter, r *http.Request) {
 		path = "/index"
 	}
 	path = fmt.Sprintf("./views%s.mustache", path)
-	resp, err := mustache.RenderFileInLayout(path, "./views/layouts/default.mustache", nil)
+	session, err := s.store.Get(r, "flash")
 	if err != nil {
 		log.Fatalln(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	flashes := session.Flashes()
+	context := make(map[string]string)
+	for _, f := range flashes {
+		context["flash"] = f.(string)
+	}
+	resp, err := mustache.RenderFileInLayout(path, "./views/layouts/default.mustache", context)
+	if err != nil {
+		log.Fatalln(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	session.Save(r, w)
 	w.Write([]byte(resp))
 }
 
@@ -90,6 +106,12 @@ func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 		s.flashMiddleware(http.HandlerFunc(s.mustache)).ServeHTTP(w, r)
 		return
 	}
+	session, err := s.store.Get(r, "flash")
+	if err != nil {
+		log.Fatalln(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 	resp, err := http.PostForm(s.config.AuthURL+"/api/login", url.Values{"email": {username},
@@ -100,16 +122,26 @@ func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
-	var msg interface{}
+	var msg map[string]string
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalln(err)
+		session.AddFlash("Something went wrong!")
+		session.Save(r, w)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 	dec := json.NewDecoder(strings.NewReader(string(body)))
 	if err := dec.Decode(&msg); err != nil {
 		log.Fatalln(err)
+		session.AddFlash("Something went wrong!")
+		session.Save(r, w)
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	if msg["status"] == "error" && msg["message"] == "Unauthorized" {
+		session.AddFlash("Invalid username or password.")
+		session.Save(r, w)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}

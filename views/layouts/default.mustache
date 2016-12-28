@@ -2,12 +2,20 @@
 <html>
   <head>
     <title>Data Board</title>
-    <link rel="stylesheet" href="/style/index.css">
-    <link rel="stylesheet" href="/style/chart.css">
+    <link rel="stylesheet" href="/static/style/index.css">
+    <link rel="stylesheet" href="/static/style/chart.css">
   </head>
 
   <body>
+    <div id="flash">{{flash}}</div>
     {{{content}}}
   </body>
+
+  <script>
+  var flash = document.getElementById("flash").innerHTML;
+  if (flash == '') {
+    document.getElementById("flash").classList.add('hidden');
+  }
+  </script>
 
 </html>
