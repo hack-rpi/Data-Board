@@ -40,15 +40,35 @@ func NewServer(port, staticDir string) *Server {
 func (s *Server) Start() {
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(s.staticDir))))
 
-	mustacheHandler := http.HandlerFunc(s.mustache)
+	mustacheHandler := http.HandlerFunc(NewRoute(s, s.mustache, false).Handle)
 	http.Handle("/", s.flashMiddleware(mustacheHandler))
 
-	http.HandleFunc("/libs/", s.libHandler)
-	http.HandleFunc("/login", s.loginHandler)
-	http.HandleFunc("/logout", s.logoutHandler)
-	http.HandleFunc("/data/", s.dataHandler)
+	http.HandleFunc("/libs/", NewRoute(s, s.libHandler, false).Handle)
+	http.HandleFunc("/login", NewRoute(s, s.loginHandler, false).Handle)
+	http.HandleFunc("/logout", NewRoute(s, s.logoutHandler, false).Handle)
+
+	http.HandleFunc("/data/users/count", NewRoute(s, s.dataUsersCountHandler, true).Handle)
+	http.HandleFunc("/data/users/accepted", NewRoute(s, s.dataUsersAcceptedHandler, true).Handle)
+	http.HandleFunc("/data/users/confirmed", NewRoute(s, s.dataUsersConfirmedHandler, true).Handle)
+	http.HandleFunc("/data/users/checkedin", NewRoute(s, s.dataUsersCheckedInHandler, true).Handle)
+	http.HandleFunc("/data/users/busStatus", NewRoute(s, s.dataUsersBusRoutesHandler, true).Handle)
+	http.HandleFunc("/data/users/schools", NewRoute(s, s.dataUsersSchoolsHandler, true).Handle)
+
 	fmt.Printf("Starting server on port %s\n", s.port)
 	http.ListenAndServe(s.port, context.ClearHandler(http.DefaultServeMux))
+}
+
+func (s *Server) isLoggedIn(r *http.Request) bool {
+	session, err := s.store.Get(r, "flash")
+	if err != nil {
+		return false
+	}
+	userID, ok1 := session.Values["userID"].(string)
+	accessToken, ok2 := session.Values["accessToken"].(string)
+	if ok1 && ok2 && s.db.VerifyToken(s.config.AuthURL, userID, accessToken) {
+		return true
+	}
+	return false
 }
 
 func (s *Server) mustache(w http.ResponseWriter, r *http.Request) {
@@ -186,35 +206,37 @@ func (s *Server) logoutHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func (s *Server) dataHandler(w http.ResponseWriter, r *http.Request) {
-	const path = "/data/"
-	if len(path) >= len(r.URL.Path) {
-		return
+func (s *Server) dataUsersCountHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "%d", s.db.CountUsers())
+}
+
+func (s *Server) dataUsersAcceptedHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "%d", s.db.CountAccepted())
+}
+
+func (s *Server) dataUsersConfirmedHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "%d", s.db.CountConfirmed())
+}
+
+func (s *Server) dataUsersCheckedInHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "%d", s.db.CountCheckedIn())
+}
+
+func (s *Server) dataUsersBusRoutesHandler(w http.ResponseWriter, r *http.Request) {
+	resp, err := json.Marshal(s.db.GetBusRouteStatus(s.config.BusRoutes))
+	if err != nil {
+		log.Fatal(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	} else {
+		fmt.Fprint(w, string(resp))
 	}
-	resource := r.URL.Path[len(path):]
-	switch resource {
-	case "users/count":
-		fmt.Fprintf(w, "%d", s.db.CountUsers())
-	case "users/accepted":
-		fmt.Fprintf(w, "%d", s.db.CountAccepted())
-	case "users/confirmed":
-		fmt.Fprintf(w, "%d", s.db.CountConfirmed())
-	case "users/checkedin":
-		fmt.Fprintf(w, "%d", s.db.CountCheckedIn())
-	case "users/busStatus":
-		resp, err := json.Marshal(s.db.GetBusRouteStatus(s.config.BusRoutes))
-		if err != nil {
-			log.Fatal(err)
-		} else {
-			fmt.Fprint(w, string(resp))
-		}
-	case "users/schools":
-		if resp, err := json.Marshal(s.db.GetSchools()); err != nil {
-			log.Fatal(err)
-		} else {
-			fmt.Fprintf(w, string(resp))
-		}
-	default:
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+}
+
+func (s *Server) dataUsersSchoolsHandler(w http.ResponseWriter, r *http.Request) {
+	if resp, err := json.Marshal(s.db.GetSchools()); err != nil {
+		log.Fatal(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	} else {
+		fmt.Fprintf(w, string(resp))
 	}
 }
