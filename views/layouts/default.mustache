@@ -7,6 +7,12 @@
   </head>
 
   <body>
+    {{#loggedIn }}
+      <a href="/logout">logout</a>
+    {{/loggedIn}}
+    {{^loggedIn}}
+      <a href="/login">login</a>
+    {{/loggedIn}}
     <div id="flash">{{flash}}</div>
     {{{content}}}
   </body>

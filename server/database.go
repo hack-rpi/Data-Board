@@ -1,7 +1,12 @@
 package server
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"net/url"
+	"strings"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -30,6 +35,36 @@ func NewDataBase(uri, dbName string) *DataBase {
 // Close ends the connection with the database server
 func (db *DataBase) Close() {
 	db.session.Close()
+}
+
+// VerifyToken checks to see if the given token is valid for the given user
+func (db *DataBase) VerifyToken(authURL, userID, token string) bool {
+	resp, err := http.PostForm(authURL+"/api/loginToken", url.Values{"userID": {userID},
+		"token": {token}})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer resp.Body.Close()
+	var msg map[string]interface{}
+	body, err := ioutil.ReadAll(resp.Body)
+	dec := json.NewDecoder(strings.NewReader(string(body)))
+	if err := dec.Decode(&msg); err != nil {
+		log.Fatalln(err)
+		return false
+	}
+	hashedToken := msg["data"]
+	query := db.db.C("users").FindId(userID)
+	doc := make(map[string]interface{})
+	if err := query.One(&doc); err != nil {
+		return false
+	}
+	validTokens := doc["services"].(map[string]interface{})["resume"].(map[string]interface{})["loginTokens"].([]interface{})
+	for _, tkn := range validTokens {
+		if tkn.(map[string]interface{})["hashedToken"].(string) == hashedToken {
+			return true
+		}
+	}
+	return false
 }
 
 // CountUsers returns the number of documents in the users collection

@@ -45,6 +45,7 @@ func (s *Server) Start() {
 
 	http.HandleFunc("/libs/", s.libHandler)
 	http.HandleFunc("/login", s.loginHandler)
+	http.HandleFunc("/logout", s.logoutHandler)
 	http.HandleFunc("/data/", s.dataHandler)
 	fmt.Printf("Starting server on port %s\n", s.port)
 	http.ListenAndServe(s.port, context.ClearHandler(http.DefaultServeMux))
@@ -57,15 +58,27 @@ func (s *Server) mustache(w http.ResponseWriter, r *http.Request) {
 	}
 	path = fmt.Sprintf("./views%s.mustache", path)
 	session, err := s.store.Get(r, "flash")
+	session.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   86400 * 7,
+		HttpOnly: true,
+	}
 	if err != nil {
 		log.Fatalln(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 	flashes := session.Flashes()
-	context := make(map[string]string)
+	context := make(map[string]interface{})
 	for _, f := range flashes {
 		context["flash"] = f.(string)
+	}
+	userID, ok1 := session.Values["userID"].(string)
+	accessToken, ok2 := session.Values["accessToken"].(string)
+	if ok1 && ok2 && s.db.VerifyToken(s.config.AuthURL, userID, accessToken) {
+		context["loggedIn"] = true
+	} else {
+		context["loggedIn"] = false
 	}
 	resp, err := mustache.RenderFileInLayout(path, "./views/layouts/default.mustache", context)
 	if err != nil {
@@ -122,7 +135,7 @@ func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
-	var msg map[string]string
+	var msg map[string]interface{}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalln(err)
@@ -139,13 +152,37 @@ func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	if msg["status"] == "error" && msg["message"] == "Unauthorized" {
+	if msg["status"] == "error" && msg["message"].(string) == "Unauthorized" {
 		session.AddFlash("Invalid username or password.")
 		session.Save(r, w)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	fmt.Println(msg)
+	userID := msg["data"].(map[string]interface{})["userId"]
+	accessToken := msg["data"].(map[string]interface{})["authToken"]
+	session.Values["userID"] = userID
+	session.Values["accessToken"] = accessToken
+	session.Save(r, w)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (s *Server) logoutHandler(w http.ResponseWriter, r *http.Request) {
+	session, err := s.store.Get(r, "flash")
+	if err != nil {
+		log.Fatalln(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	userID, ok1 := session.Values["userID"].(string)
+	accessToken, ok2 := session.Values["accessToken"].(string)
+	if ok1 && ok2 && s.db.VerifyToken(s.config.AuthURL, userID, accessToken) {
+		session.AddFlash("You have been logged out.")
+	} else {
+		session.AddFlash("You are not logged in.")
+	}
+	session.Values["userID"] = ""
+	session.Values["accessToken"] = ""
+	session.Save(r, w)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
