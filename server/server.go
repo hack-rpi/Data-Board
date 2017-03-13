@@ -102,8 +102,8 @@ func (s *Server) mustache(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := mustache.RenderFileInLayout(path, "./views/layouts/default.mustache", context)
 	if err != nil {
-		log.Fatalln(err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		log.Println(err)
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 	session.Save(r, w)

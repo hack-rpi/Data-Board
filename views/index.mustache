@@ -24,8 +24,13 @@
   <h2>General Data</h2>
   
   <h3>Schools</h3>
+  <p>Unique Schools: <span id="num-unique-schools"></span></p>
   <div data-action="schools" class="btn chart">Chart Schools</div>
   <a href="/data/users/schools" download="schools.json" class="btn download">Download Schools</a>
+  <div>
+    <label for="school-min-count">Minimum</label>
+    <input type="number" id="school-min-count" value="0" min="0">
+  </div>
   <div class="school-chart"></div>
   
   <h3>Zip Codes</h3>

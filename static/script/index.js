@@ -1,3 +1,5 @@
+var dataStore = {};
+
 /**
  * Document Ready
  */
@@ -25,6 +27,8 @@ function onChartButton(event) {
           filtered = filtered.sort(function(a, b) {
             return a._id > b._id;
           });
+          $('#num-unique-schools').text(filtered.length);
+          dataStore['schools'] = filtered;
           plotBarChart(d3.select('.school-chart'), filtered);
         });
       break;
@@ -85,6 +89,9 @@ function onDownloadButton(event) {
 }
 
 
+/**
+ * 
+ */
 function explicitlySetStyle (element) {
   var cSSStyleDeclarationComputed = getComputedStyle(element);
   var i, len, key, value;
@@ -102,6 +109,9 @@ function explicitlySetStyle (element) {
 }
 
 
+/**
+ * 
+ */
 function traverse(obj){
   var tree = [];
   tree.push(obj);
@@ -210,7 +220,7 @@ function plotBarChart($chart, data) {
   var y = d3.scale.ordinal()
       .rangeRoundBands([0, height], 0.1)
       .domain(data.map(function(d) { return d._id; }));
-var topOuter = y.range()[0] - 10;
+  var topOuter = y.range()[0] - 10;
   var xAxis = d3.svg.axis()
       .scale(x)
       .orient('bottom');
@@ -274,6 +284,72 @@ var topOuter = y.range()[0] - 10;
       .attr('y', function(d) { return y(d._id) + y.rangeBand() - topOuter; })
       .style('text-anchor', 'start')
       .text(function(d) { return d.count; });
+  
+  $('#school-min-count').on('change', function(event) {
+    var val = $(event.target).val();
+    var data = dataStore['schools'];
+    if (data == undefined) {
+      return;
+    }
+    data = filter(data, function(d) { return d.count > val; });
+    var label_length = d3.max(data, function(d) { return d._id.length * 5; });
+    var height = (10 * data.length) - margin.top - margin.bottom;
+    var x = d3.scale.linear()
+        .range([0, width])
+        .domain([0, d3.max(data, function(d) { return d.count; }) ]);
+    var y = d3.scale.ordinal()
+        .rangeRoundBands([0, height], 0.1)
+        .domain(data.map(function(d) { return d._id; }));
+    var topOuter = y.range()[0] - 10;
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient('bottom');
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient('left')
+        .ticks(10);
+    
+    svg.select('.x.axis').remove();
+    svg.append('g')
+      .attr('class', 'x axis')
+      .call(yAxis)
+      .attr('transform', function() { return topOuter > 0 ? 'translate(0, -' + topOuter + ')' : '' })
+      .selectAll('text')
+        .attr('class', 'school-label')
+        .style('text-anchor', 'end')
+
+    var bars = svg.selectAll('.bar')
+      .data(data);
+    bars.exit().remove();
+    bars.enter().append('rect')
+      .attr('width', 0)
+      .attr('height', y.rangeBand())
+      .attr('x', 0)
+      .attr('y', function(d) { return y(d._id) - topOuter; });
+    bars.transition()
+      .duration(500)
+      .attr('class', 'bar')
+      .attr('width', function(d) { return x(d.count); });
+    var labels = svg.selectAll('.count-label')
+      .data(data);
+    labels.exit().remove();
+    labels.enter().append('text')
+      .attr('x', function(d) { return x(d.count) + 2; })
+      .attr('y', function(d) { return y(d._id) + y.rangeBand() - topOuter; })
+      .style('text-anchor', 'start')
+      .text(function(d) { return d.count; });
+    labels.transition()
+      .duration(500)    
+      .attr('x', function(d) { return x(d.count) + 2; })
+      .text(function(d) { return d.count; })
+      .attr('class', 'count-label');
+    $('#num-unique-schools').text(data.length);
+
+    d3.select('.school-chart').select('svg')
+      .attr('height', height + margin.top + margin.bottom)
+      .style('margin-bottom', -2 * topOuter + 'px');
+  });
+
 }
 
 
