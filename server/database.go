@@ -194,8 +194,31 @@ func (db *DataBase) GetSchools() []map[string]interface{} {
 	var res []map[string]interface{}
 	err := pipe.All(&res)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 		return nil
+	}
+	return res
+}
+
+// Item refers to the objects that are return after aggregating the data
+type Item struct {
+	_id   string
+	count interface{}
+}
+
+// GetWhy returns a map of interest areas to the percentage of people who were interested in it
+func (db *DataBase) GetWhy() []interface{} {
+	var uniques []string
+	err := db.db.C("users").Find(bson.M{}).Distinct("profile.interests.why", &uniques)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	total, _ := db.db.C("users").Count()
+	res := make([]interface{}, len(uniques))
+	for i, u := range uniques {
+		count, _ := db.db.C("users").Find(bson.M{"profile.interests.why": u}).Count()
+		res[i] = bson.M{"_id": u, "count": float32(int(float32(count)/float32(total)*10000)) / 100}
 	}
 	return res
 }

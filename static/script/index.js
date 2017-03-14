@@ -29,7 +29,7 @@ function onChartButton(event) {
           });
           $('#num-unique-schools').text(filtered.length);
           dataStore['schools'] = filtered;
-          plotBarChart(d3.select('.school-chart'), filtered);
+          plotBarChart(d3.select('.school-chart'), filtered, 10);
         });
       break;
     case 'zipcodes':
@@ -38,8 +38,9 @@ function onChartButton(event) {
       $('.why-chart').empty();
       $.get('/data/users/why')
         .done(function(res) {
+          res = JSON.parse(res);          
           var filtered = filter(res, function(d) { return d._id !== null; });
-          plotPieChart(d3.select('.why-chart'), filtered);
+          plotBarChart(d3.select('.why-chart'), filtered, 0);
         });
       break;
     case 'genders':
@@ -207,9 +208,10 @@ function plotPieChart($chart, data) {
  * @param {d3.selection} $chart - d3 handle to the location of where to 
  * 	draw the graph
  * @param {array} data - array of objects from which to create the graph
+ * @param {int} top_margin - some annoying parameter to get the bars to line up
  * @returns {void}
  */
-function plotBarChart($chart, data) {
+function plotBarChart($chart, data, top_margin) {
   var label_length = d3.max(data, function(d) { return d._id.length * 5; });
   var margin = {top: 0, right: 30, bottom: 0, left: label_length};
   var width = 860 - margin.right - margin.left;
@@ -220,7 +222,7 @@ function plotBarChart($chart, data) {
   var y = d3.scale.ordinal()
       .rangeRoundBands([0, height], 0.1)
       .domain(data.map(function(d) { return d._id; }));
-  var topOuter = y.range()[0] - 10;
+  var topOuter = y.range()[0] - top_margin;
   var xAxis = d3.svg.axis()
       .scale(x)
       .orient('bottom');
