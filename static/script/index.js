@@ -43,6 +43,16 @@ function onChartButton(event) {
           plotBarChart(d3.select('.why-chart'), filtered, 0);
         });
       break;
+    case 'interestAreas':
+      $('.interestAreas-chart').empty();
+      $.get('/data/users/interestAreas')
+        .done(function(res) {
+          res = JSON.parse(res);
+          console.log(res);
+          var filtered = filter(res, function(d) { return d._id !== null; });
+          plotBarChart(d3.select('.interestAreas-chart'), filtered, 0);
+        });
+      break;
     case 'genders':
       $('.gender-chart').empty();
       $.get('/data/anonData/genders')

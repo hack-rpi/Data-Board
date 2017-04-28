@@ -54,6 +54,8 @@ func (s *Server) Start() {
 	http.HandleFunc("/data/users/busStatus", NewRoute(s, s.dataUsersBusRoutesHandler, true).Handle)
 	http.HandleFunc("/data/users/schools", NewRoute(s, s.dataUsersSchoolsHandler, true).Handle)
 	http.HandleFunc("/data/users/why", NewRoute(s, s.dataUsersWhyHandler, true).Handle)
+	http.HandleFunc("/data/users/interestAreas",
+		NewRoute(s, s.dataUsersInterestAreasHandler, true).Handle)
 
 	fmt.Printf("Starting server on port %s\n", s.port)
 	http.ListenAndServe(s.port, context.ClearHandler(http.DefaultServeMux))
@@ -242,6 +244,14 @@ func (s *Server) dataUsersSchoolsHandler(w http.ResponseWriter, r *http.Request)
 
 func (s *Server) dataUsersWhyHandler(w http.ResponseWriter, r *http.Request) {
 	if resp, err := json.Marshal(s.db.GetWhy()); err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	} else {
+		fmt.Fprintf(w, string(resp))
+	}
+}
+
+func (s *Server) dataUsersInterestAreasHandler(w http.ResponseWriter, r *http.Request) {
+	if resp, err := json.Marshal(s.db.GetInterestAreas()); err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	} else {
 		fmt.Fprintf(w, string(resp))

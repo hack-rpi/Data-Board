@@ -222,3 +222,21 @@ func (db *DataBase) GetWhy() []interface{} {
 	}
 	return res
 }
+
+// GetInterestAreas returns a map of interest areas to the percentage of people who were interested
+// 	in it
+func (db *DataBase) GetInterestAreas() []interface{} {
+	var uniques []string
+	err := db.db.C("users").Find(bson.M{}).Distinct("profile.interests.areas", &uniques)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	total, _ := db.db.C("users").Count()
+	res := make([]interface{}, len(uniques))
+	for i, u := range uniques {
+		count, _ := db.db.C("users").Find(bson.M{"profile.interests.areas": u}).Count()
+		res[i] = bson.M{"_id": u, "count": float32(int(float32(count)/float32(total)*10000)) / 100}
+	}
+	return res
+}
