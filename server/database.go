@@ -1,12 +1,19 @@
 package server
 
 import (
+	"archive/zip"
+	"bytes"
+	"crypto/rand"
 	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"fmt"
+
+	"strconv"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -239,4 +246,70 @@ func (db *DataBase) GetInterestAreas() []interface{} {
 		res[i] = bson.M{"_id": u, "count": float32(int(float32(count)/float32(total)*10000)) / 100}
 	}
 	return res
+}
+
+// User represents a document in the users collection
+type User struct {
+	Profile struct {
+		Role       string `bson:"role"`
+		Name       string `bson:"name"`
+		School     string `bson:"school"`
+		tshirt     string `bson:"tshirt"`
+		Graduating int    `bson:"graduating"`
+		Resume     []byte `bson:"resume"`
+	} `bson:"profile"`
+	Roles []string `bson:"roles"`
+}
+
+// BuildResumes creates a zip folder in the temp directory of all of the users resumes, organized
+//	by graduation year.
+func (db *DataBase) BuildResumes() string {
+	filepath := "temp/" + randomString(8) + ".zip"
+	var users []User
+	err := db.db.C("users").Find(bson.M{}).All(&users)
+	if err != nil {
+		log.Println("BuildResumes: error with query")
+		log.Println(err)
+	}
+	// Create a buffer to write our archive to.
+	buf := new(bytes.Buffer)
+	// Create a new zip archive.
+	w := zip.NewWriter(buf)
+	// Write each user's resume to the zip folder
+	for _, user := range users {
+		gradYear := strconv.Itoa(user.Profile.Graduating)
+		filename := gradYear + "/" + user.Profile.Name + ".pdf"
+		f, err := w.Create(filename)
+		if err != nil {
+			log.Println("BuildResumes: error creating file")
+			log.Fatal(err)
+		}
+		_, err = f.Write(user.Profile.Resume)
+		if err != nil {
+			log.Println("BuildResumes: error writing to file")
+			log.Fatal(err)
+		}
+	}
+	// Make sure to check the error on Close.
+	err = w.Close()
+	if err != nil {
+		log.Println("BuildResumes: error closing zip")
+		log.Fatal(err)
+	}
+	err = ioutil.WriteFile(filepath, buf.Bytes(), 0777)
+	if err != nil {
+		log.Println("BuildResumes: error writing buffer")
+		log.Println(err)
+	}
+	return filepath
+}
+
+// randomString generates a random alphanumeric string that is of length 2n
+func randomString(n int) string {
+	b := make([]byte, n)
+	if _, err := rand.Read(b); err != nil {
+		log.Fatalln(err)
+	}
+	s := fmt.Sprintf("%X", b)
+	return s
 }

@@ -2,3 +2,4 @@ bower_components
 node_modules
 static/style/*.css
 config.json
+temp

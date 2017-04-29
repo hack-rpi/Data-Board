@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/cbroglie/mustache"
@@ -31,6 +32,7 @@ func NewServer(port, staticDir string) *Server {
 		log.Println(err)
 	}
 	db := NewDataBase(c.MongoURL, c.DBName)
+	os.Mkdir("temp", 0766)
 	store := sessions.NewCookieStore([]byte("secret"))
 	s := Server{port, staticDir, db, c, store}
 	return &s
@@ -56,6 +58,7 @@ func (s *Server) Start() {
 	http.HandleFunc("/data/users/why", NewRoute(s, s.dataUsersWhyHandler, true).Handle)
 	http.HandleFunc("/data/users/interestAreas",
 		NewRoute(s, s.dataUsersInterestAreasHandler, true).Handle)
+	http.HandleFunc("/data/resumes/gradYear", NewRoute(s, s.dataResumesGradYear, true).Handle)
 
 	fmt.Printf("Starting server on port %s\n", s.port)
 	http.ListenAndServe(s.port, context.ClearHandler(http.DefaultServeMux))
@@ -144,7 +147,7 @@ func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	session, err := s.store.Get(r, "flash")
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -153,7 +156,7 @@ func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := http.PostForm(s.config.AuthURL+"/api/login", url.Values{"email": {username},
 		"password": {password}})
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
@@ -161,7 +164,7 @@ func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 	var msg map[string]interface{}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 		session.AddFlash("Something went wrong!")
 		session.Save(r, w)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -169,7 +172,9 @@ func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	dec := json.NewDecoder(strings.NewReader(string(body)))
 	if err := dec.Decode(&msg); err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		fmt.Println(string(body))
+
 		session.AddFlash("Something went wrong!")
 		session.Save(r, w)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -256,4 +261,11 @@ func (s *Server) dataUsersInterestAreasHandler(w http.ResponseWriter, r *http.Re
 	} else {
 		fmt.Fprintf(w, string(resp))
 	}
+}
+
+func (s *Server) dataResumesGradYear(w http.ResponseWriter, r *http.Request) {
+	filename := s.db.BuildResumes()
+	w.Header().Set("Content-type", "application/zip")
+	http.ServeFile(w, r, filename)
+	defer os.Remove(filename)
 }

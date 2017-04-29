@@ -7,11 +7,13 @@
   </head>
 
   <body>
+    <a href="/">Home</a>
+    <a href="/resume">Resume</a>
     {{#loggedIn }}
-      <a href="/logout">logout</a>
+      <a href="/logout">Logout</a>
     {{/loggedIn}}
     {{^loggedIn}}
-      <a href="/login">login</a>
+      <a href="/login">Login</a>
     {{/loggedIn}}
     <div id="flash">{{flash}}</div>
     {{{content}}}
